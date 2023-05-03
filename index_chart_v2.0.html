@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>Team 10</title>
+  <h1>Practice 3: Part 1</h1>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dashjs/3.2.2/dash.all.min.js"
+    integrity="sha512-vYbnErl9JO63c2v/ADkEKrYfQChzm4v7nU+55A5EvO7P+AYm9bmdtZhBA6Fg8FkfqEvXJLd/k9L26d1HS1eOtg=="
+    crossorigin="anonymous"></script>
+</head>
+<div class="code">
+  <video class="dashjs-player" autoplay controls preload="auto" muted>
+  </video>
+</div>
+<div class="code">
+  <p>Video Bitrate: <span id="bitrate"></span> kbps</p>
+  <p>Video Buffer: <span id="buffer"></span> seconds</p>
+  <p>Video Representation: <span id="representation"></span></p>
+</div>
+<div>
+  <canvas id="chartanim" width="250" height="100"></canvas>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    init();
+  });
+  
+  function init() {
+
+    arr_time = [];
+    arr_buffer = [];
+    arr_bits = [];
+
+    function addData(chart, label, data) {
+      chart.data.labels.push('');
+      chart.data.datasets.forEach((dataset) => {
+        if (dataset.label == label) {
+          dataset.data.push(data);
+        }
+      });
+      chart.update();
+    }
+
+    const data = {
+
+      labels: arr_time,
+      datasets: [{
+        label: 'Buffer level',
+        backgroundColor: 'rgba(255, 50, 120, 0.5)',
+        borderColor: 'rgb(255, 50, 120)',
+        data: arr_buffer,
+        yAxisID: 'y',
+        fill: true
+      },
+      {
+      label: 'Bitrate',
+      backgroundColor: 'rgba(15, 200, 250, 0.5)',
+      borderColor: 'rgb(15, 200, 250)',
+      data: arr_bits,
+      yAxisID: 'y1',
+      fill: true
+      }]
+    }
+
+    const config = {
+      type: 'line',
+      data: data,
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          title: {
+            display: true,
+            text: 'Video info'
+          }
+        }
+      },
+    };
+  
+    const protData = {
+      "org.w3.clearkey": {
+        "clearkeys": {
+          "oW5AK5BW43HzbTSKpiu3SQ": "hyN9IKGfWKdAwFaE5pm0qg"
+          //"oW5AK5BW43HzbTSKpiu3SQ": "CLAVEMALA"
+        }
+      }
+    };
+
+    ourchart = new Chart(document.getElementById('chartanim').getContext('2d'), config);
+
+    var video, player, mpd_url = "./output_encrypted/stream.mpd";
+    
+    video = document.querySelector("video");
+    player = dashjs.MediaPlayer().create();
+    player.setProtectionData(protData);
+    player.initialize(video, mpd_url, true);
+    player.on(dashjs.MediaPlayer.events["PLAYBACK_ENDED"], function () {
+      clearInterval(eventPoller);
+    });
+
+    var eventPoller = setInterval(function () {
+      var streamInfo = player.getActiveStream().getStreamInfo();
+      var dashMetrics = player.getDashMetrics();
+      var dashAdapter = player.getDashAdapter();
+      if (dashMetrics && streamInfo) {
+        const periodIdx = streamInfo.index;
+        var repSwitch = dashMetrics.getCurrentRepresentationSwitch('video', true);
+        var bufferLevel = dashMetrics.getCurrentBufferLevel('video', true);
+        var bitrate = repSwitch ? Math.round(dashAdapter.
+          getBandwidthForRepresentation(repSwitch.to,
+            periodIdx) / 1000) : NaN;
+        document.getElementById('buffer').innerText = bufferLevel;
+        document.getElementById('bitrate').innerText = bitrate;
+        document.getElementById('representation').innerText = repSwitch.to;
+      }
+      today = new Date();
+      time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds() + "." + today.getMilliseconds();
+
+      buffer_data = { x: time, y: bufferLevel };
+      bitrate_data = { x: time, y: bitrate };
+
+      //addData(ourchart, 'Buffer Level', buffer_data);
+      //addData(ourchart, 'Bitrate', bitrate_data);
+
+      //ourchart.buffer_data.labels.push('');
+      //ourchart.bitrate_data.labels.push('');
+      arr_time.push(time);
+      arr_buffer.push(bufferLevel);
+      arr_bit.push(bitrate);
+      ourchart.update();
+
+    }, 500);
+  }
+</script>
+</div>
+</body>
+
+</html>
