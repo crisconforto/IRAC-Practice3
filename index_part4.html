@@ -3,7 +3,7 @@
 
 <head>
   <title>Team 10</title>
-  <h1>Practice 3: Part 1</h1>
+  <h1>Practice 3: Part 4</h1>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dashjs/3.2.2/dash.all.min.js"
     integrity="sha512-vYbnErl9JO63c2v/ADkEKrYfQChzm4v7nU+55A5EvO7P+AYm9bmdtZhBA6Fg8FkfqEvXJLd/k9L26d1HS1eOtg=="
     crossorigin="anonymous"></script>
@@ -26,23 +26,13 @@
     init();
   });
   
-  function init() {
 
-    arr_time = [];
-    arr_buffer = [];
-    arr_bits = [];
+  const arr_time = [];
+  const arr_buffer = [];
+  const arr_bits = [];
 
-    function addData(chart, label, data) {
-      chart.data.labels.push('');
-      chart.data.datasets.forEach((dataset) => {
-        if (dataset.label == label) {
-          dataset.data.push(data);
-        }
-      });
-      chart.update();
-    }
 
-    const data = {
+    const data_config = {
 
       labels: arr_time,
       datasets: [{
@@ -65,9 +55,10 @@
 
     const config = {
       type: 'line',
-      data: data,
+      data: data_config,
       options: {
         responsive: true,
+        indexAxis: 'x',
         plugins: {
           legend: {
             position: 'top',
@@ -78,24 +69,38 @@
           }
         }
       },
-    };
-  
-    const protData = {
-      "org.w3.clearkey": {
-        "clearkeys": {
-          "oW5AK5BW43HzbTSKpiu3SQ": "hyN9IKGfWKdAwFaE5pm0qg"
-          //"oW5AK5BW43HzbTSKpiu3SQ": "CLAVEMALA"
+      scales: {
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          title: {
+            display: true,
+            text: 'Buffer Level ()'
+          }
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          title: {
+            display: true,
+            text: 'Bitrate (kbps)'
+          },
         }
       }
     };
 
+
     ourchart = new Chart(document.getElementById('chartanim').getContext('2d'), config);
 
-    var video, player, mpd_url = "./output_encrypted/stream.mpd";
+
+  function init() {
+
+    var video, player, mpd_url = "./output/stream.mpd";
     
     video = document.querySelector("video");
     player = dashjs.MediaPlayer().create();
-    player.setProtectionData(protData);
     player.initialize(video, mpd_url, true);
     player.on(dashjs.MediaPlayer.events["PLAYBACK_ENDED"], function () {
       clearInterval(eventPoller);
@@ -119,17 +124,9 @@
       today = new Date();
       time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds() + "." + today.getMilliseconds();
 
-      buffer_data = { x: time, y: bufferLevel };
-      bitrate_data = { x: time, y: bitrate };
-
-      //addData(ourchart, 'Buffer Level', buffer_data);
-      //addData(ourchart, 'Bitrate', bitrate_data);
-
-      //ourchart.buffer_data.labels.push('');
-      //ourchart.bitrate_data.labels.push('');
       arr_time.push(time);
       arr_buffer.push(bufferLevel);
-      arr_bit.push(bitrate);
+      arr_bits.push(bitrate);
       ourchart.update();
 
     }, 500);
